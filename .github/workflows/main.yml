@@ -1,0 +1,39 @@
+name: Build SNYVO APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract SNYVO project
+        run: |
+          unzip -q snyvo.zip -d extracted
+          PROJECT_DIR=$(dirname "$(find extracted -name gradlew -type f | head -1)")
+          echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
+          chmod +x "$PROJECT_DIR/gradlew"
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android
+        uses: android-actions/setup-android@v3
+
+      - name: Build APK
+        run: |
+          cd "$PROJECT_DIR"
+          ./gradlew assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: snyvo-debug-apk
+          path: '**/build/outputs/apk/debug/*.apk'
